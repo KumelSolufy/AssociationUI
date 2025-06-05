@@ -1,0 +1,217 @@
+{
+ "Contact": [
+  {
+   "depends_on": "eval:doc.custom_type == 'Natural Person'",
+   "dt": "Contact",
+   "fieldname": "custom_nationality",
+   "fieldtype": "Link",
+   "insert_after": "custom_date_of_birth",
+   "label": "Nationality",
+   "module": "FCRM",
+   "options": "Country"
+  },
+  {
+   "dt": "Contact",
+   "fieldname": "custom_address_html",
+   "fieldtype": "HTML",
+   "insert_after": "custom_country_of_registration",
+   "label": "Address HTML",
+   "module": "FCRM"
+  },
+  {
+   "depends_on": "eval:doc.custom_type == 'Legal Entity'",
+   "dt": "Contact",
+   "fieldname": "custom_tag",
+   "fieldtype": "Data",
+   "insert_after": "image",
+   "label": "Tag",
+   "module": "FCRM"
+  },
+  {
+   "depends_on": "eval:doc.custom_type == 'Legal Entity'",
+   "dt": "Contact",
+   "fieldname": "custom_country_of_registration",
+   "fieldtype": "Link",
+   "insert_after": "custom_legal_form",
+   "label": "Country of Registration",
+   "module": "FCRM",
+   "options": "Country"
+  },
+  {
+   "depends_on": "eval:doc.custom_type == 'Legal Entity'",
+   "dt": "Contact",
+   "fieldname": "custom_duns_code",
+   "fieldtype": "Data",
+   "insert_after": "custom_date_of_incorporation",
+   "label": "D-U-N-S Code",
+   "module": "FCRM"
+  },
+  {
+   "depends_on": "eval:doc.custom_type == 'Legal Entity'",
+   "dt": "Contact",
+   "fieldname": "custom_date_of_incorporation",
+   "fieldtype": "Date",
+   "insert_after": "custom_website",
+   "label": "Date of Incorporation",
+   "module": "FCRM"
+  },
+  {
+   "depends_on": "eval:doc.custom_type == 'Legal Entity'",
+   "dt": "Contact",
+   "fieldname": "custom_legal_form",
+   "fieldtype": "Link",
+   "insert_after": "custom_vat_number",
+   "label": "Legal Form",
+   "module": "FCRM",
+   "options": "Legal Form"
+  },
+  {
+   "depends_on": "eval:doc.custom_type == 'Legal Entity'",
+   "dt": "Contact",
+   "fieldname": "custom_website",
+   "fieldtype": "Data",
+   "insert_after": "custom_commercial_register_number",
+   "label": "Website",
+   "module": "FCRM"
+  },
+  {
+   "depends_on": "eval:doc.custom_type == 'Legal Entity'",
+   "dt": "Contact",
+   "fieldname": "custom_commercial_register_number",
+   "fieldtype": "Data",
+   "insert_after": "custom_sector",
+   "label": "Commercial Register Number",
+   "module": "FCRM"
+  },
+  {
+   "depends_on": "eval:doc.custom_type == 'Legal Entity'",
+   "dt": "Contact",
+   "fieldname": "custom_vat_number",
+   "fieldtype": "Data",
+   "insert_after": "custom_main_phone_number",
+   "label": "VAT Number",
+   "module": "FCRM"
+  },
+  {
+   "depends_on": "eval:doc.custom_type == 'Legal Entity'",
+   "dt": "Contact",
+   "fieldname": "custom_main_phone_number",
+   "fieldtype": "Data",
+   "insert_after": "custom_industry",
+   "label": "Main Phone Number",
+   "module": "FCRM"
+  },
+  {
+   "depends_on": "eval:doc.custom_type == 'Legal Entity'",
+   "dt": "Contact",
+   "fieldname": "custom_sector",
+   "fieldtype": "Link",
+   "insert_after": "custom_tag",
+   "label": "Sector",
+   "module": "FCRM",
+   "options": "Sector"
+  },
+  {
+   "depends_on": "eval:doc.custom_type == 'Legal Entity'",
+   "dt": "Contact",
+   "fieldname": "custom_industry",
+   "fieldtype": "Link",
+   "insert_after": "custom_legal_name",
+   "label": "Industry",
+   "module": "FCRM",
+   "options": "Industry"
+  },
+  {
+   "depends_on": "eval:doc.custom_type == 'Legal Entity'",
+   "dt": "Contact",
+   "fieldname": "custom_legal_name",
+   "fieldtype": "Data",
+   "insert_after": "sync_with_google_contacts",
+   "label": "Legal Name",
+   "module": "FCRM"
+  },
+  {
+   "dt": "Contact",
+   "fieldname": "custom_type",
+   "fieldtype": "Link",
+   "insert_after": "contact_section",
+   "label": "Type",
+   "module": "FCRM",
+   "options": "Type of Person"
+  },
+  {
+   "depends_on": "eval:doc.custom_type == 'Natural Person'",
+   "dt": "Contact",
+   "fieldname": "custom_title",
+   "fieldtype": "Select",
+   "insert_after": "cb00",
+   "label": "Title",
+   "module": "FCRM",
+   "options": "\nDr.\nProf."
+  },
+  {
+   "depends_on": "eval:doc.custom_type == 'Natural Person'\n",
+   "dt": "Contact",
+   "fieldname": "custom_role__function",
+   "fieldtype": "Data",
+   "insert_after": "custom_social_security_number",
+   "label": "Role / Function",
+   "module": "FCRM"
+  },
+  {
+   "depends_on": "eval:doc.custom_type == 'Natural Person'\n",
+   "dt": "Contact",
+   "fieldname": "custom_profession__occupation",
+   "fieldtype": "Data",
+   "insert_after": "custom_fph_number",
+   "label": "Profession / Occupation",
+   "module": "FCRM"
+  },
+  {
+   "depends_on": "eval:doc.custom_type == 'Natural Person'",
+   "dt": "Contact",
+   "fieldname": "custom_fph_number",
+   "fieldtype": "Data",
+   "insert_after": "custom_place_of_origin",
+   "label": "FPH Number",
+   "module": "FCRM"
+  },
+  {
+   "depends_on": "eval:doc.custom_type == 'Natural Person'",
+   "dt": "Contact",
+   "fieldname": "custom_social_security_number",
+   "fieldtype": "Data",
+   "insert_after": "custom_nationality",
+   "label": "Social Security Number",
+   "module": "FCRM"
+  },
+  {
+   "depends_on": "eval:doc.custom_type == 'Natural Person'",
+   "dt": "Contact",
+   "fieldname": "custom_place_of_origin",
+   "fieldtype": "Data",
+   "insert_after": "custom_maritial_status",
+   "label": "Place of Origin",
+   "module": "FCRM"
+  },
+  {
+   "depends_on": "eval:doc.custom_type == 'Natural Person'",
+   "dt": "Contact",
+   "fieldname": "custom_date_of_birth",
+   "fieldtype": "Date",
+   "insert_after": "company_name",
+   "label": "Date Of Birth",
+   "module": "FCRM"
+  },
+  {
+   "depends_on": "eval:doc.custom_type == 'Natural Person'",
+   "dt": "Contact",
+   "fieldname": "custom_maritial_status",
+   "fieldtype": "Select",
+   "insert_after": "address",
+   "label": "Maritial Status",
+   "module": "FCRM",
+   "options": "\nSingle\nMarried\nDivorced"
+  }
+ ]
+}

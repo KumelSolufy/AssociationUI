@@ -1,0 +1,59 @@
+{
+ "Contact Phone": [
+  {
+   "dt": "Contact Phone",
+   "fieldname": "custom_email",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "insert_after": "custom_telefon",
+   "label": "Email",
+   "module": "FCRM",
+   "options": "Email"
+  },
+  {
+   "dt": "Contact Phone",
+   "fieldname": "custom_telefon",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "insert_after": "custom_title",
+   "label": "Telefon",
+   "module": "FCRM"
+  },
+  {
+   "dt": "Contact Phone",
+   "fieldname": "custom_function",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "insert_after": "phone",
+   "label": "Function",
+   "module": "FCRM"
+  },
+  {
+   "dt": "Contact Phone",
+   "fieldname": "custom_title",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "insert_after": "custom_name",
+   "label": "Title",
+   "module": "FCRM"
+  },
+  {
+   "dt": "Contact Phone",
+   "fieldname": "custom_last_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "insert_after": "is_primary_mobile_no",
+   "label": "Last Name",
+   "module": "FCRM"
+  },
+  {
+   "dt": "Contact Phone",
+   "fieldname": "custom_name",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "insert_after": "custom_last_name",
+   "label": "Name",
+   "module": "FCRM"
+  }
+ ]
+}

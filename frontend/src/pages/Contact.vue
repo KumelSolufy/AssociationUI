@@ -153,22 +153,38 @@
             class="mt-4"
             :rows="contacts"
             :columns="contactColumns"
-            :options="{ selectable: false, showTooltip: false }"
+            :options="{ selectable: false, showTooltip: false ,resizeColumn: true}"
+            @columnWidthUpdated="() => triggerResize++"
           />
-          <AddressListView
-            v-else-if="tab.label === 'Addresses' && addresses.length"
-            class="mt-4"
-            :rows="addresses"
-            :columns="addressColumns"
-            :options="{ selectable: false, showTooltip: false }"
-          />
-          <div
-            v-else
-            class="grid flex-1 place-items-center text-xl font-medium text-ink-gray-4"
-          >
-            <div class="flex flex-col items-center justify-center space-y-3">
-              <component :is="tab.icon" class="!h-10 !w-10" />
-              <div>{{ __('No {0} Found', [__(tab.label)]) }}</div>
+          <div v-else-if="tab.label === 'Addresses'">
+            <div class="flex justify-end mb-4">
+              <Button
+                :label="__('Add Address')"
+                theme="gray"
+                variant="solid"
+                @click="handleAddAddress"
+              >
+                <template #prefix>
+                  <FeatherIcon name="plus" class="h-4 w-4" />
+                </template>
+              </Button>
+            </div>
+            <AddressListView
+              v-if="addresses.length"
+              class="mt-4"
+              :rows="addresses"
+              :columns="addressColumns"
+              :options="{ selectable: false, showTooltip: false ,resizeColumn: true}"
+              @columnWidthUpdated="() => triggerResize++"
+            />
+            <div
+              v-else
+              class="grid flex-1 place-items-center text-xl font-medium text-ink-gray-4"
+            >
+              <div class="flex flex-col items-center justify-center space-y-3">
+                <component :is="tab.icon" class="!h-10 !w-10" />
+                <div>{{ __('No {0} Found', [__(tab.label)]) }}</div>
+              </div>
             </div>
           </div>
       </template>
@@ -191,11 +207,16 @@
     v-model="showAddressModal"
     v-model:address="_address"
     :options="{
-      linkedContact: contact.data?.name,
+      linkedContact: contact.data.name,
       contactData: contact.data,
-      afterInsert: async () => {
-        await contact.reload()
-        await sections.reload()
+      afterInsert: async (doc) => {
+        await Promise.all([
+          contact.reload(),
+          sections.reload()
+        ])
+        if (contact.data?.addresses) {
+          contact.data.addresses.push(doc)
+        }
         toast.success(__('Address added successfully'))
       }
     }"
@@ -203,6 +224,7 @@
 </template>
 
 <script setup>
+
 import AddressListView from '@/components/ListViews/AddressListView.vue'
 import ContactListView from '@/components/ListViews/ContactListView.vue'
 
@@ -247,7 +269,8 @@ const { getUser } = usersStore()
 const { getOrganization } = organizationsStore()
 const { getDealStatus } = statusesStore()
 const { doctypeMeta } = getMeta('Contact')
-
+const triggerResize = ref(1)
+const resizeEnabled = ref(true)
 const props = defineProps({
   contactId: {
     type: String,
@@ -677,6 +700,20 @@ const contacts = computed(() => {
 async function handleReload() {
   await contact.reload()
   await sections.reload()
+}
+
+function handleAddAddress() {
+  _address.value = {
+    address_type: 'Contact',
+    is_primary_address: !addresses.length,
+    is_shipping_address: !addresses.length,
+    links: [{
+      link_doctype: 'Contact',
+      link_name: contact.data.name,
+      link_title: contact.data.full_name
+    }]
+  }
+  showAddressModal.value = true
 }
 </script>
 

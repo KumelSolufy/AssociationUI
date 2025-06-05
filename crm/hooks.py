@@ -259,7 +259,8 @@ doc_events = {
 # "crm.auth.validate"
 # ]
 
-after_migrate = ["crm.fcrm.doctype.fcrm_settings.fcrm_settings.after_migrate"]
+after_migrate = ["crm.fcrm.doctype.fcrm_settings.fcrm_settings.after_migrate",
+                 "crm.migrate.after_migrate"]
 
 standard_dropdown_items = [
 	{

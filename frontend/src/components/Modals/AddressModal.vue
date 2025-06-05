@@ -55,7 +55,7 @@ import EditIcon from '@/components/Icons/EditIcon.vue'
 import { usersStore } from '@/stores/users'
 import { isMobileView } from '@/composables/settings'
 import { capture } from '@/telemetry'
-import { FeatherIcon, createResource, ErrorMessage } from 'frappe-ui'
+import { FeatherIcon, createResource, ErrorMessage, call } from 'frappe-ui'
 import { ref, nextTick, watch, computed } from 'vue'
 
 const props = defineProps({
@@ -152,52 +152,18 @@ const updateAddressValues = createResource({
   },
 })
 
-// const createAddress = createResource({
-//   url: 'frappe.client.insert',
-//   makeParams() {
-//     return {
-//       doc: {
-//         doctype: 'Address',
-//         ..._address.value,
-//         links: [
-//           {
-//             link_doctype: 'Contact',
-//             link_name: address.value.name, // the contact
-//           },
-//         ],
-//       },
-//     }
-//   },
-
-//   onSuccess(doc) {
-//     loading.value = false
-//     if (doc.name) {
-//       capture('address_created')
-//       handleAddressUpdate(doc)
-//     }
-//   },
-//   onError(err) {
-//     loading.value = false
-//     error.value = err
-//   },
-// })
-
 const createAddress = createResource({
-  url: 'frappe.client.insert',
+  url: 'crm.api.contact.create_address_and_link_contact',
   makeParams() {
+    const contactData = props.options?.contactData
     return {
-      doc: {
-        doctype: 'Address',
+      address_data: {
         ..._address.value,
-        links: props.linkedContact
-          ? [
-              {
-                link_doctype: 'Contact',
-                link_name: props.linkedContact,
-              },
-            ]
-          : [],
+        address_type: _address.value.address_type || 'Billing',
+        is_primary_address: !contactData?.addresses?.length,
+        is_shipping_address: !contactData?.addresses?.length
       },
+      contact_name: contactData?.name
     }
   },
   onSuccess(doc) {
