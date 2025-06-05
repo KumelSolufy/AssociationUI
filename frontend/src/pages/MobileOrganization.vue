@@ -124,14 +124,21 @@
           v-if="tab.label === 'Deals' && rows.length"
           :rows="rows"
           :columns="columns"
-          :options="{ selectable: false, showTooltip: false }"
+          :options="{ selectable: false, showTooltip: false, resizeColumn: true }"
         />
         <ContactsListView
           class="mt-4"
           v-if="tab.label === 'Contacts' && rows.length"
           :rows="rows"
           :columns="columns"
-          :options="{ selectable: false, showTooltip: false }"
+          :options="{ selectable: false, showTooltip: false, resizeColumn: true }"
+        />
+        <AddressListView
+          class="mt-4"
+          v-if="tab.label === 'Addresses' && rows.length"
+          :rows="rows"
+          :columns="columns"
+          :options="{ selectable: false, showTooltip: false, resizeColumn: true }"
         />
         <div
           v-if="!rows.length && tab.name !== 'Details'"
@@ -155,10 +162,12 @@ import LayoutHeader from '@/components/LayoutHeader.vue'
 import AddressModal from '@/components/Modals/AddressModal.vue'
 import DealsListView from '@/components/ListViews/DealsListView.vue'
 import ContactsListView from '@/components/ListViews/ContactsListView.vue'
+import AddressListView from '@/components/ListViews/AddressListView.vue'
 import DetailsIcon from '@/components/Icons/DetailsIcon.vue'
 import CameraIcon from '@/components/Icons/CameraIcon.vue'
 import DealsIcon from '@/components/Icons/DealsIcon.vue'
 import ContactsIcon from '@/components/Icons/ContactsIcon.vue'
+import MapPinIcon from '@/components/Icons/MapPinIcon.vue'
 import { getSettings } from '@/stores/settings'
 import { getMeta } from '@/stores/meta'
 import { globalStore } from '@/stores/global'
@@ -358,6 +367,12 @@ const tabs = [
     icon: h(ContactsIcon, { class: 'h-4 w-4' }),
     count: computed(() => contacts.data?.length),
   },
+  {
+    name: 'Addresses',
+    label: __('Addresses'),
+    icon: h(MapPinIcon, { class: 'h-4 w-4' }),
+    count: computed(() => addresses.data?.length),
+  },
 ]
 
 const deals = createListResource({
@@ -404,21 +419,54 @@ const contacts = createListResource({
   auto: true,
 })
 
+const addresses = createListResource({
+  type: 'list',
+  doctype: 'Address',
+  cache: ['addresses', props.organizationId],
+  fields: [
+    'name',
+    'address_title',
+    'address_type',
+    'address_line1',
+    'address_line2',
+    'city',
+    'state',
+    'country',
+    'pincode',
+    'phone',
+    'email_id',
+    'modified',
+  ],
+  filters: {
+    link_doctype: 'CRM Organization',
+    link_name: props.organizationId,
+  },
+  orderBy: 'modified desc',
+  pageLength: 20,
+  auto: true,
+})
+
 const rows = computed(() => {
   let list = []
-  list = !tabIndex.value ? deals : contacts
+  if (tabIndex.value === 0) list = deals
+  else if (tabIndex.value === 1) list = contacts
+  else if (tabIndex.value === 2) list = addresses
 
   if (!list.data) return []
 
-  return list.data.map((row) => {
-    return !tabIndex.value ? getDealRowObject(row) : getContactRowObject(row)
-  })
+  if (tabIndex.value === 0) return list.data.map((row) => getDealRowObject(row))
+  else if (tabIndex.value === 1) return list.data.map((row) => getContactRowObject(row))
+  else if (tabIndex.value === 2) return list.data.map((row) => getAddressRowObject(row))
+  return []
 })
 
 const { getFormattedCurrency } = getMeta('CRM Deal')
 
 const columns = computed(() => {
-  return tabIndex.value === 0 ? dealColumns : contactColumns
+  if (tabIndex.value === 0) return dealColumns
+  else if (tabIndex.value === 1) return contactColumns
+  else if (tabIndex.value === 2) return addressColumns
+  return []
 })
 
 function getDealRowObject(deal) {
@@ -463,6 +511,26 @@ function getContactRowObject(contact) {
     modified: {
       label: formatDate(contact.modified),
       timeAgo: __(timeAgo(contact.modified)),
+    },
+  }
+}
+
+function getAddressRowObject(address) {
+  return {
+    name: address.name,
+    address_title: address.address_title,
+    address_type: address.address_type,
+    address_line1: address.address_line1,
+    address_line2: address.address_line2,
+    city: address.city,
+    state: address.state,
+    country: address.country,
+    pincode: address.pincode,
+    phone: address.phone,
+    email_id: address.email_id,
+    modified: {
+      label: formatDate(address.modified),
+      timeAgo: __(timeAgo(address.modified)),
     },
   }
 }
@@ -526,6 +594,59 @@ const contactColumns = [
     label: __('Organization'),
     key: 'company_name',
     width: '12rem',
+  },
+  {
+    label: __('Last modified'),
+    key: 'modified',
+    width: '8rem',
+  },
+]
+
+const addressColumns = [
+  {
+    label: __('Address Title'),
+    key: 'address_title',
+    width: '15rem',
+  },
+  {
+    label: __('Type'),
+    key: 'address_type',
+    width: '10rem',
+  },
+  {
+    label: __('Address'),
+    key: 'address_line1',
+    width: '20rem',
+  },
+  {
+    label: __('City'),
+    key: 'city',
+    width: '12rem',
+  },
+  {
+    label: __('State'),
+    key: 'state',
+    width: '12rem',
+  },
+  {
+    label: __('Country'),
+    key: 'country',
+    width: '12rem',
+  },
+  {
+    label: __('Postal Code'),
+    key: 'pincode',
+    width: '10rem',
+  },
+  {
+    label: __('Phone'),
+    key: 'phone',
+    width: '12rem',
+  },
+  {
+    label: __('Email'),
+    key: 'email_id',
+    width: '15rem',
   },
   {
     label: __('Last modified'),
