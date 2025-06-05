@@ -102,7 +102,6 @@ const showAddressModal = ref(false)
 
 const contactsListView = ref(null)
 
-// contacts data is loaded in the ViewControls component
 const contacts = ref({})
 const address = ref({})
 const loadMore = ref(1)

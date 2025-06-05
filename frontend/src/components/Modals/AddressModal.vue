@@ -143,7 +143,8 @@ const updateAddressValues = createResource({
   onSuccess(doc) {
     loading.value = false
     if (doc.name) {
-      handleAddressUpdate(doc)
+      props.options?.afterInsert?.(doc)
+      show.value = false
     }
   },
   onError(err) {
@@ -170,7 +171,8 @@ const createAddress = createResource({
     loading.value = false
     if (doc.name) {
       capture('address_created')
-      handleAddressUpdate(doc)
+      props.options?.afterInsert?.(doc)
+      show.value = false
     }
   },
   onError(err) {
@@ -181,7 +183,6 @@ const createAddress = createResource({
 
 function handleAddressUpdate(doc) {
   show.value = false
-  props.options.afterInsert && props.options.afterInsert(doc)
 }
 
 watch(

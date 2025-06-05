@@ -148,16 +148,44 @@
         </button>
       </template>
       <template #tab-panel="{ tab }">
-          <ContactListView
-            v-if="tab.label === 'Contacts' && contacts.length"
-            class="mt-4"
-            :rows="contacts"
-            :columns="contactColumns"
-            :options="{ selectable: false, showTooltip: false ,resizeColumn: true}"
-            @columnWidthUpdated="() => triggerResize++"
-          />
+          <div v-if="tab.label === 'Contacts'">
+            <div class="flex justify-end mb-4 mr-5 mt-5">
+              <Button
+                :label="__('Add Contact')"
+                theme="gray"
+                variant="solid"
+                @click="handleAddContact"
+              >
+                <template #prefix>
+                  <FeatherIcon name="plus" class="h-4 w-4" />
+                </template>
+              </Button>
+            </div>
+            <ContactListView
+              v-if="contacts.length"
+              class="mt-4"
+              :rows="contacts"
+              :columns="contactColumns"
+              :options="{
+                selectable: false,
+                showTooltip: false,
+                resizeColumn: true,
+                onColumnResize: handleColumnResize
+              }"
+              @columnWidthUpdated="handleColumnWidthUpdate"
+            />
+            <div
+              v-else
+              class="grid flex-1 place-items-center text-xl font-medium text-ink-gray-4"
+            >
+              <div class="flex flex-col items-center justify-center space-y-3">
+                <component :is="tab.icon" class="!h-10 !w-10" />
+                <div>{{ __('No {0} Found', [__(tab.label)]) }}</div>
+              </div>
+            </div>
+          </div>
           <div v-else-if="tab.label === 'Addresses'">
-            <div class="flex justify-end mb-4">
+            <div class="flex justify-end mb-4 mr-5 mt-5">
               <Button
                 :label="__('Add Address')"
                 theme="gray"
@@ -174,8 +202,13 @@
               class="mt-4"
               :rows="addresses"
               :columns="addressColumns"
-              :options="{ selectable: false, showTooltip: false ,resizeColumn: true}"
-              @columnWidthUpdated="() => triggerResize++"
+              :options="{
+                selectable: false,
+                showTooltip: false,
+                resizeColumn: true,
+                onColumnResize: handleAddressColumnResize
+              }"
+              @columnWidthUpdated="handleAddressColumnWidthUpdate"
             />
             <div
               v-else
@@ -210,14 +243,17 @@
       linkedContact: contact.data.name,
       contactData: contact.data,
       afterInsert: async (doc) => {
-        await Promise.all([
-          contact.reload(),
-          sections.reload()
-        ])
+        await contact.reload()
+        await sections.reload()
         if (contact.data?.addresses) {
-          contact.data.addresses.push(doc)
+          const index = contact.data.addresses.findIndex(addr => addr.name === doc.name)
+          if (index > -1) {
+            contact.data.addresses[index] = doc
+          } else {
+            contact.data.addresses.push(doc)
+          }
         }
-        toast.success(__('Address added successfully'))
+        toast.success(doc.name === _address.value.name ? __('Address updated successfully') : __('Address added successfully'))
       }
     }"
   />
@@ -258,7 +294,7 @@ import {
   Dropdown,
   toast,
 } from 'frappe-ui'
-import { ref, computed, h } from 'vue'
+import { ref, computed, h, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { errorMessage as _errorMessage } from '../utils'
 
@@ -505,56 +541,141 @@ function getParsedSections(_sections) {
             options: (contact.data?.phone_nos || []).map((phone) => ({
               name: phone.name,
               value: phone.phone,
-              selected: phone.phone === contact.data?.actual_mobile_no,
-              onClick: () => {
+              selected: phone.is_primary_mobile_no,
+              onClick: async () => {
                 if (!contact.data) return
                 _contact.value.actual_mobile_no = phone.phone
                 _contact.value.mobile_no = phone.phone
-                setAsPrimary('mobile_no', phone.phone)
+                await setAsPrimary('mobile_no', phone.phone)
+                await sections.reload()
               },
-              onSave: (option, isNew) => {
+              onSave: async (option, isNew) => {
                 if (!contact.data) return
                 if (isNew) {
-                  createNew('phone', option.value)
+                  await createNew('phone', option.value)
+                  await sections.reload()
                   if (contact.data.phone_nos?.length === 1) {
                     _contact.value.actual_mobile_no = option.value
+                    _contact.value.mobile_no = option.value
                   }
                 } else {
-                  editOption(
+                  await editOption(
                     'Contact Phone',
                     option.name,
                     'phone',
-                    option.value,
+                    option.value
                   )
+                  await sections.reload()
                 }
               },
               onDelete: async (option, isNew) => {
                 if (!contact.data) return
                 contact.data.phone_nos = (contact.data.phone_nos || []).filter(
-                  (phone) => phone.name !== option.name,
+                  (phone) => phone.name !== option.name
                 )
-                !isNew && (await deleteOption('Contact Phone', option.name))
+                if (!isNew) {
+                  await deleteOption('Contact Phone', option.name)
+                  await sections.reload()
+                }
                 if (_contact.value.actual_mobile_no === option.value) {
                   if (!contact.data.phone_nos?.length) {
                     _contact.value.actual_mobile_no = ''
+                    _contact.value.mobile_no = ''
                   } else {
-                    _contact.value.actual_mobile_no = contact.data.phone_nos.find(
-                      (phone) => phone.is_primary_mobile_no,
-                    )?.phone
+                    const primaryPhone = contact.data.phone_nos.find(
+                      (phone) => phone.is_primary_mobile_no
+                    )
+                    if (primaryPhone) {
+                      _contact.value.actual_mobile_no = primaryPhone.phone
+                      _contact.value.mobile_no = primaryPhone.phone
+                    }
                   }
                 }
-              },
+              }
             })) || [],
-            create: () => {
+            create: async () => {
               if (!contact.data) return
               if (!contact.data.phone_nos) contact.data.phone_nos = []
               contact.data.phone_nos.push({
                 name: 'new-1',
                 value: '',
                 selected: false,
-                isNew: true,
+                isNew: true
               })
-            },
+              await sections.reload()
+            }
+          }
+        } else if (field.fieldname === 'phone') {
+          return {
+            ...field,
+            read_only: false,
+            fieldtype: 'Dropdown',
+            options: (contact.data?.phone_nos || []).map((phone) => ({
+              name: phone.name,
+              value: phone.phone,
+              selected: phone.is_primary_phone,
+              onClick: async () => {
+                if (!contact.data) return
+                _contact.value.actual_mobile_no = phone.phone
+                _contact.value.mobile_no = phone.phone
+                await setAsPrimary('phone', phone.phone)
+                await sections.reload()
+              },
+              onSave: async (option, isNew) => {
+                if (!contact.data) return
+                if (isNew) {
+                  await createNew('phone', option.value)
+                  await sections.reload()
+                  if (contact.data.phone_nos?.length === 1) {
+                    _contact.value.actual_mobile_no = option.value
+                    _contact.value.mobile_no = option.value
+                  }
+                } else {
+                  await editOption(
+                    'Contact Phone',
+                    option.name,
+                    'phone',
+                    option.value
+                  )
+                  await sections.reload()
+                }
+              },
+              onDelete: async (option, isNew) => {
+                if (!contact.data) return
+                contact.data.phone_nos = (contact.data.phone_nos || []).filter(
+                  (phone) => phone.name !== option.name
+                )
+                if (!isNew) {
+                  await deleteOption('Contact Phone', option.name)
+                  await sections.reload()
+                }
+                if (_contact.value.actual_mobile_no === option.value) {
+                  if (!contact.data.phone_nos?.length) {
+                    _contact.value.actual_mobile_no = ''
+                    _contact.value.mobile_no = ''
+                  } else {
+                    const primaryPhone = contact.data.phone_nos.find(
+                      (phone) => phone.is_primary_phone
+                    )
+                    if (primaryPhone) {
+                      _contact.value.actual_mobile_no = primaryPhone.phone
+                      _contact.value.mobile_no = primaryPhone.phone
+                    }
+                  }
+                }
+              }
+            })) || [],
+            create: async () => {
+              if (!contact.data) return
+              if (!contact.data.phone_nos) contact.data.phone_nos = []
+              contact.data.phone_nos.push({
+                name: 'new-1',
+                value: '',
+                selected: false,
+                isNew: true
+              })
+              await sections.reload()
+            }
           }
         } else if (field.fieldname === 'address') {
           return {
@@ -611,7 +732,12 @@ async function setAsPrimary(field, value) {
     value,
   })
   if (d) {
-    contact.reload()
+    await contact.reload()
+    await sections.reload()
+    if (field === 'mobile_no') {
+      _contact.value.actual_mobile_no = value
+      _contact.value.mobile_no = value
+    }
     toast.success(__('Contact updated'))
   }
 }
@@ -624,7 +750,15 @@ async function createNew(field, value) {
     value,
   })
   if (d) {
-    contact.reload()
+    await contact.reload()
+    await sections.reload()
+    if (field === 'phone' && contact.data?.phone_nos?.length === 1) {
+      const newPhone = contact.data.phone_nos[0]
+      if (newPhone.is_primary_mobile_no) {
+        _contact.value.actual_mobile_no = newPhone.phone
+        _contact.value.mobile_no = newPhone.phone
+      }
+    }
     toast.success(__('Contact updated'))
   }
 }
@@ -637,7 +771,8 @@ async function editOption(doctype, name, fieldname, value) {
     value,
   })
   if (d) {
-    contact.reload()
+    await contact.reload()
+    await sections.reload()
     toast.success(__('Contact updated'))
   }
 }
@@ -648,6 +783,7 @@ async function deleteOption(doctype, name) {
     name,
   })
   await contact.reload()
+  await sections.reload()
   toast.success(__('Contact updated'))
 }
 
@@ -663,7 +799,7 @@ async function updateField(fieldname, value) {
   contact.reload()
 }
 
-const addressColumns = [
+const addressColumns = ref([
   { label: 'Address Type', key: 'address_type', width: '10rem' },
   { label: 'Address Line 1', key: 'address_line1', width: '12rem' },
   { label: 'Address Line 2', key: 'address_line2', width: '12rem' },
@@ -671,17 +807,17 @@ const addressColumns = [
   { label: 'City', key: 'city', width: '10rem' },
   { label: 'State', key: 'state', width: '10rem' },
   { label: 'Country', key: 'country', width: '10rem' },
-]
+])
 
-const contactColumns = [
-  { label: __('Last Name'), key: 'custom_last_name', width: '12rem' },
-  { label: __('Name'), key: 'custom_name', width: '12rem' },
-  { label: __('Title'), key: 'custom_title', width: '10rem' },
-  { label: __('Email'), key: 'custom_email', width: '12rem' },
-  { label: __('Phone'), key: 'custom_telefon', width: '12rem' },
-  { label: __('Function'), key: 'custom_function', width: '12rem' },
-  { label: __('Number'), key: 'phone', width: '12rem' },
-]
+const contactColumns = ref([
+  { label: __('Last Name'), key: 'custom_last_name', width: '8rem' },
+  { label: __('Name'), key: 'custom_name', width: '8rem' },
+  { label: __('Title'), key: 'custom_title', width: '7rem' },
+  { label: __('Email'), key: 'custom_email', width: '10rem' },
+  { label: __('Phone'), key: 'custom_telefon', width: '8rem' },
+  { label: __('Function'), key: 'custom_function', width: '8rem' },
+  { label: __('Number'), key: 'phone', width: '8rem' },
+])
 
 const contacts = computed(() => {
   if (!contact.data?.phone_nos) return []
@@ -714,6 +850,75 @@ function handleAddAddress() {
     }]
   }
   showAddressModal.value = true
+}
+
+function handleAddContact() {
+  toast.info(__('Contact creation functionality coming soon'))
+}
+
+
+onMounted(() => {
+
+  const savedContactWidths = localStorage.getItem('contactColumnsWidth')
+  if (savedContactWidths) {
+    try {
+      const widths = JSON.parse(savedContactWidths)
+      contactColumns.value = contactColumns.value.map(col => ({
+        ...col,
+        width: widths[col.key] || col.width
+      }))
+    } catch (e) {
+      console.error('Error loading saved contact column widths:', e)
+    }
+  }
+
+  // Load address column widths
+  const savedAddressWidths = localStorage.getItem('addressColumnsWidth')
+  if (savedAddressWidths) {
+    try {
+      const widths = JSON.parse(savedAddressWidths)
+      addressColumns.value = addressColumns.value.map(col => ({
+        ...col,
+        width: widths[col.key] || col.width
+      }))
+    } catch (e) {
+      console.error('Error loading saved address column widths:', e)
+    }
+  }
+})
+
+function handleColumnWidthUpdate(column) {
+  // Save the new column width to localStorage
+  const widths = contactColumns.value.reduce((acc, col) => {
+    acc[col.key] = col.width
+    return acc
+  }, {})
+  localStorage.setItem('contactColumnsWidth', JSON.stringify(widths))
+}
+
+function handleColumnResize(column, newWidth) {
+  const col = contactColumns.value.find(c => c.key === column.key)
+  if (col) {
+    col.width = newWidth
+    handleColumnWidthUpdate(column)
+  }
+}
+
+function handleAddressColumnWidthUpdate(column) {
+  // Save the new column width to localStorage
+  const widths = addressColumns.value.reduce((acc, col) => {
+    acc[col.key] = col.width
+    return acc
+  }, {})
+  localStorage.setItem('addressColumnsWidth', JSON.stringify(widths))
+}
+
+function handleAddressColumnResize(column, newWidth) {
+  const col = addressColumns.value.find(c => c.key === column.key)
+  if (col) {
+    col.width = newWidth
+    handleAddressColumnWidthUpdate(column)
+  }
 }
 </script>
 

@@ -111,18 +111,24 @@ def create_new(contact, field, value):
 		email = {"email_id": value, "is_primary": 1 if len(contact.email_ids) == 0 else 0}
 		contact.append("email_ids", email)
 	elif field in ("mobile_no", "phone", "custom_main_phone_number"):
-		# Check if this is the first mobile number
-		is_first_mobile = not any(phone.is_primary_mobile_no for phone in contact.phone_nos)
-		mobile_no = {
+		# Check if this is the first phone number
+		is_first_phone = len(contact.phone_nos) == 0
+		phone = {
 			"phone": value,
-			"is_primary_mobile_no": 1 if is_first_mobile else 0,
-			"is_primary_phone": 1 if is_first_mobile else 0
+			"is_primary_mobile_no": 1 if is_first_phone else 0,
+			"is_primary_phone": 1 if is_first_phone else 0
 		}
-		contact.append("phone_nos", mobile_no)
+		contact.append("phone_nos", phone)
+		
+		# If this is the first number, update the contact's mobile_no field
+		if is_first_phone:
+			contact.mobile_no = value
 	else:
 		frappe.throw("Invalid field")
 
 	contact.save()
+	# Reload the contact to ensure all fields are updated
+	contact.reload()
 	return True
 
 
